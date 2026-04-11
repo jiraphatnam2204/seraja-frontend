@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { Campground } from "@/libs/types"
-import CampgroundCard from "./CampgroundCard"
-import LoadingState from "@/components/common/LoadingState"
-import EmptyState from "@/components/common/EmptyState"
+import { Campground } from "@/types";
+import CampgroundCard from "./CampgroundCard";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
 
 interface CampgroundListProps {
-  campgrounds: Campground[]
-  loading?: boolean
-  onView?: (id: string) => void
-  onBook?: (id: string) => void
+  campgrounds: Campground[];
+  loading?: boolean;
+  onView?: (id: string) => void;
+  onBook?: (id: string) => void;
 }
 
 export default function CampgroundList({
@@ -19,7 +19,7 @@ export default function CampgroundList({
   onBook,
 }: CampgroundListProps) {
   if (loading) {
-    return <LoadingState message="Loading campgrounds..." />
+    return <LoadingState message="Loading campgrounds..." />;
   }
 
   if (!campgrounds || campgrounds.length === 0) {
@@ -28,7 +28,7 @@ export default function CampgroundList({
         title="No Campgrounds"
         message="There are no campgrounds to display right now."
       />
-    )
+    );
   }
 
   return (
@@ -42,5 +42,5 @@ export default function CampgroundList({
         />
       ))}
     </div>
-  )
+  );
 }
