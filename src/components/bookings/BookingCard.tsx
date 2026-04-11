@@ -16,7 +16,7 @@ interface BookingCardProps {
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-blue-100 text-blue-700",
   "checked-in": "bg-green-100 text-green-700",
-  "checked-out": "bg-gray-100 text-gray-500",
+  "checked-out": "bg-gray-200 text-gray-500",
   cancelled: "bg-red-100 text-red-600",
 };
 

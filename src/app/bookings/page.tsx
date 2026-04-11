@@ -208,7 +208,7 @@ export default function BookingsPage() {
   const STATUS_FILTERS = [
     { key: "confirmed", label: "Confirmed", color: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" },
     { key: "checked-in", label: "Checked In", color: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" },
-    { key: "checked-out", label: "Checked Out", color: "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200" },
+    { key: "checked-out", label: "Checked Out", color: "bg-gray-200 text-gray-600 border-gray-200 hover:bg-gray-200" },
     { key: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-600 border-red-200 hover:bg-red-200" },
   ] as const;
 
@@ -339,7 +339,7 @@ export default function BookingsPage() {
                 <span className="ml-1.5 opacity-70">{bookings.length}</span>
               </button>
 
-              {/* Confirmed & Checked-in */}
+              {/* Confirmed, Checked-in, Checked-out & Cancelled */}
               {STATUS_FILTERS.map(({ key, label, color }) => {
                 const count = bookings.filter((b) => b.status === key).length;
                 const isActive = statusFilter === key;
