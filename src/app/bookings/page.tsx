@@ -319,13 +319,52 @@ export default function BookingsPage() {
             )}
           </div>
         )}
+        {/* ── Status Filter Bar ── */}
+          {!loading && bookings.length > 0 && (
+            <div className="mb-6 flex items-center gap-2 flex-wrap">
 
+              {/* All */}
+              <button
+                onClick={() => setStatusFilter(null)}
+                className={`
+                  text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors
+                  ${statusFilter === null
+                    ? "bg-gray-800 text-white border-gray-800"
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"}
+                `}
+              >
+                All
+                <span className="ml-1.5 opacity-70">{bookings.length}</span>
+              </button>
+
+              {/* Confirmed & Checked-in */}
+              {STATUS_FILTERS.map(({ key, label, color }) => {
+                const count = bookings.filter((b) => b.status === key).length;
+                const isActive = statusFilter === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setStatusFilter(isActive ? null : key)}
+                    className={`
+                      text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors
+                      ${isActive
+                        ? color.replace("hover:", "") + " ring-2 ring-offset-1 ring-current"
+                        : `bg-white text-gray-500 border-gray-200 hover:${color.split(" ")[0].replace("bg-", "bg-")}`}
+                    `}
+                  >
+                    {label}
+                    <span className="ml-1.5 opacity-70">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         {/* ── Booking list ── */}
         {error ? (
           <ErrorState message={error} onRetry={getBookings} />
         ) : (
           <BookingList
-            bookings={bookings}
+            bookings={filteredBookings} 
             loading={loading}
             onEdit={role !== "campOwner" ? handleEdit : undefined}
             onCancel={handleCancel}
