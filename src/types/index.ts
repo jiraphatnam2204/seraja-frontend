@@ -52,7 +52,7 @@ export interface Booking {
   // --------------------------------
 
   nightsCount: number;
-  user?: string | null;
+  user?: User | null;
   guestName?: string | null;
   guestTel?: string | null;
   campground: Campground;

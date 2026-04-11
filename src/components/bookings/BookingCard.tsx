@@ -44,6 +44,7 @@ export default function BookingCard({
     createdAt,
     guestName,
     guestTel,
+    user,
     status,
     actualCheckIn,
     actualCheckOut,
@@ -91,9 +92,13 @@ export default function BookingCard({
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {isGuestBook && (
+            {isGuestBook ? (
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
                 Guest booking
+              </span>
+            ) : (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+                Registered user
               </span>
             )}
             {status && (
@@ -106,17 +111,29 @@ export default function BookingCard({
           </div>
         </div>
 
-        {/* Guest info (if guest booking) */}
-        {isGuestBook && (
-          <div className="rounded-lg border border-purple-100 bg-purple-50 px-4 py-3 flex flex-col gap-1">
-            <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1">
-              Guest Info
+        {/* Info Box (Guest or User) */}
+        {(isGuestBook || user) && (
+          <div
+            className={`rounded-lg border px-4 py-3 flex flex-col gap-1 ${
+              isGuestBook
+                ? "border-purple-100 bg-purple-50"
+                : "border-blue-100 bg-blue-50"
+            }`}
+          >
+            <p
+              className={`text-xs font-semibold uppercase tracking-wide mb-1 ${
+                isGuestBook ? "text-purple-600" : "text-blue-600"
+              }`}
+            >
+              {isGuestBook ? "Guest Info" : "User Info"}
             </p>
             <p className="text-sm text-gray-700">
-              <span className="font-medium">Name:</span> {guestName}
+              <span className="font-medium">Name:</span>{" "}
+              {isGuestBook ? guestName : user?.name}
             </p>
             <p className="text-sm text-gray-700">
-              <span className="font-medium">Tel:</span> {guestTel}
+              <span className="font-medium">Tel:</span>{" "}
+              {isGuestBook ? guestTel : user?.tel}
             </p>
           </div>
         )}
