@@ -40,6 +40,10 @@ const ROLE_CONFIG = {
 export default function BookingsPage() {
   const router = useRouter();
   const { user, logout, isAdmin, loading: authLoading } = useAuth();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const {
     bookings,
     getBookings,
@@ -52,6 +56,8 @@ export default function BookingsPage() {
     loading,
     error,
   } = useBookings();
+
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
@@ -199,6 +205,17 @@ export default function BookingsPage() {
     }
   };
 
+  const STATUS_FILTERS = [
+    { key: "confirmed", label: "Confirmed", color: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" },
+    { key: "checked-in", label: "Checked In", color: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" },
+    { key: "checked-out", label: "Checked Out", color: "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200" },
+    { key: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-600 border-red-200 hover:bg-red-200" },
+  ] as const;
+
+  const filteredBookings = statusFilter
+    ? bookings.filter((b) => b.status === statusFilter)
+    : bookings;
+  
   if (authLoading) {
     return (
       <>
@@ -276,8 +293,10 @@ export default function BookingsPage() {
               <p className="text-xs text-gray-500">Upcoming</p>
               <p className="text-2xl font-bold text-blue-600">
                 {
-                  bookings.filter((b) => new Date(b.checkInDate) >= new Date())
-                    .length
+                  bookings.filter(
+                    (b) =>
+                      new Date(b.checkInDate).setHours(0, 0, 0, 0) >= today.getTime()
+                  ).length
                 }
               </p>
             </div>
@@ -285,8 +304,10 @@ export default function BookingsPage() {
               <p className="text-xs text-gray-500">Past</p>
               <p className="text-2xl font-bold text-gray-400">
                 {
-                  bookings.filter((b) => new Date(b.checkInDate) < new Date())
-                    .length
+                  bookings.filter(
+                    (b) =>
+                      new Date(b.checkInDate).setHours(0, 0, 0, 0) < today.getTime()
+                  ).length
                 }
               </p>
             </div>
@@ -300,13 +321,52 @@ export default function BookingsPage() {
             )}
           </div>
         )}
+        {/* ── Status Filter Bar ── */}
+          {!loading && bookings.length > 0 && (
+            <div className="mb-6 flex items-center gap-2 flex-wrap">
 
+              {/* All */}
+              <button
+                onClick={() => setStatusFilter(null)}
+                className={`
+                  text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors
+                  ${statusFilter === null
+                    ? "bg-gray-800 text-white border-gray-800"
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"}
+                `}
+              >
+                All
+                <span className="ml-1.5 opacity-70">{bookings.length}</span>
+              </button>
+
+              {/* Confirmed & Checked-in */}
+              {STATUS_FILTERS.map(({ key, label, color }) => {
+                const count = bookings.filter((b) => b.status === key).length;
+                const isActive = statusFilter === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setStatusFilter(isActive ? null : key)}
+                    className={`
+                      text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors
+                      ${isActive
+                        ? color.replace("hover:", "") + " ring-2 ring-offset-1 ring-current"
+                        : `bg-white text-gray-500 border-gray-200 hover:${color.split(" ")[0].replace("bg-", "bg-")}`}
+                    `}
+                  >
+                    {label}
+                    <span className="ml-1.5 opacity-70">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         {/* ── Booking list ── */}
         {error ? (
           <ErrorState message={error} onRetry={getBookings} />
         ) : (
           <BookingList
-            bookings={bookings}
+            bookings={filteredBookings} 
             loading={loading}
             onEdit={role !== "campOwner" ? handleEdit : undefined}
             onCancel={handleCancel}
