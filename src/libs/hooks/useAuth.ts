@@ -1,9 +1,11 @@
-'use client';
+"use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import { LoginCredentials, RegisterData } from '../types';
+import { LoginCredentials, RegisterData } from "../../types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://cedt-be-for-fe-proj.vercel.app/api/v1";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://cedt-be-for-fe-proj.vercel.app/api/v1";
 
 export const useAuth = () => {
   const { data: session, status } = useSession();
@@ -43,8 +45,8 @@ export const useAuth = () => {
     register,
     logout,
     loading: status === "loading",
-    isAdmin: session?.user?.role === 'admin',
+    isAdmin: session?.user?.role === "admin",
     // ADDED: Check for Camp Owner role
-    isCampOwner: session?.user?.role === 'campOwner'
+    isCampOwner: session?.user?.role === "campOwner",
   };
 };

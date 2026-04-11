@@ -1,50 +1,59 @@
-"use client"
+"use client";
 
-import { useEffect, useReducer, useState } from "react"
-import { useRouter } from "next/navigation"
-import Navbar from "@/components/layout/Navbar"
-import PageContainer from "@/components/layout/PageContainer"
-import CampgroundCard from "@/components/campgrounds/CampgroundCard"
-import LoadingState from "@/components/common/LoadingState"
-import ErrorState from "@/components/common/ErrorState"
-import EmptyState from "@/components/common/EmptyState"
-import { useCampgrounds } from "@/libs/hooks/useCampgrounds"
-import { useAuth } from "@/libs/hooks/useAuth"
-import { Campground } from "@/libs/types"
+import { useEffect, useReducer, useState } from "react";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/layout/Navbar";
+import PageContainer from "@/components/layout/PageContainer";
+import CampgroundCard from "@/components/campgrounds/CampgroundCard";
+import LoadingState from "@/components/common/LoadingState";
+import ErrorState from "@/components/common/ErrorState";
+import EmptyState from "@/components/common/EmptyState";
+import { useCampgrounds } from "@/libs/hooks/useCampgrounds";
+import { useAuth } from "@/libs/hooks/useAuth";
+import { Campground } from "@/types";
 
 // ── Star rating reducer (same pattern as reference CardPanel) ──────────────
-type RatingMap = Map<string, number>
+type RatingMap = Map<string, number>;
 type RatingAction =
   | { type: "SET"; id: string; value: number }
-  | { type: "CLEAR"; id: string }
+  | { type: "CLEAR"; id: string };
 
 function ratingReducer(state: RatingMap, action: RatingAction): RatingMap {
-  const next = new Map(state)
-  if (action.type === "SET") next.set(action.id, action.value)
-  if (action.type === "CLEAR") next.delete(action.id)
-  return next
+  const next = new Map(state);
+  if (action.type === "SET") next.set(action.id, action.value);
+  if (action.type === "CLEAR") next.delete(action.id);
+  return next;
 }
 
 // ── Sort options ──────────────────────────────────────────────────────────
-type SortOption = "default" | "rating-high" | "rating-low" | "name-az" | "name-za"
+type SortOption =
+  | "default"
+  | "rating-high"
+  | "rating-low"
+  | "name-az"
+  | "name-za";
 
 function sortCampgrounds(
   campgrounds: Campground[],
   ratings: RatingMap,
-  sort: SortOption
+  sort: SortOption,
 ): Campground[] {
-  const list = [...campgrounds]
+  const list = [...campgrounds];
   switch (sort) {
     case "rating-high":
-      return list.sort((a, b) => (ratings.get(b._id) ?? 0) - (ratings.get(a._id) ?? 0))
+      return list.sort(
+        (a, b) => (ratings.get(b._id) ?? 0) - (ratings.get(a._id) ?? 0),
+      );
     case "rating-low":
-      return list.sort((a, b) => (ratings.get(a._id) ?? 0) - (ratings.get(b._id) ?? 0))
+      return list.sort(
+        (a, b) => (ratings.get(a._id) ?? 0) - (ratings.get(b._id) ?? 0),
+      );
     case "name-az":
-      return list.sort((a, b) => a.name.localeCompare(b.name))
+      return list.sort((a, b) => a.name.localeCompare(b.name));
     case "name-za":
-      return list.sort((a, b) => b.name.localeCompare(a.name))
+      return list.sort((a, b) => b.name.localeCompare(a.name));
     default:
-      return list
+      return list;
   }
 }
 
@@ -53,10 +62,10 @@ function StarRating({
   value,
   onChange,
 }: {
-  value: number
-  onChange: (v: number) => void
+  value: number;
+  onChange: (v: number) => void;
 }) {
-  const [hovered, setHovered] = useState(0)
+  const [hovered, setHovered] = useState(0);
 
   return (
     <div className="flex gap-0.5" onClick={(e) => e.preventDefault()}>
@@ -64,12 +73,19 @@ function StarRating({
         <button
           key={star}
           type="button"
-          onClick={(e) => { e.stopPropagation(); onChange(star) }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange(star);
+          }}
           onMouseEnter={() => setHovered(star)}
           onMouseLeave={() => setHovered(0)}
           className="text-xl leading-none transition-transform hover:scale-110 focus:outline-none"
         >
-          <span className={(hovered || value) >= star ? "text-yellow-400" : "text-gray-300"}>
+          <span
+            className={
+              (hovered || value) >= star ? "text-yellow-400" : "text-gray-300"
+            }
+          >
             ★
           </span>
         </button>
@@ -77,30 +93,35 @@ function StarRating({
       {value > 0 && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onChange(0) }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange(0);
+          }}
           className="ml-1 text-xs text-gray-400 hover:text-red-400"
         >
           ✕
         </button>
       )}
     </div>
-  )
+  );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────
 export default function CampgroundsPage() {
-  const router = useRouter()
-  const { user, logout, isAdmin } = useAuth()
-  const { campgrounds, getCampgrounds, loading, error } = useCampgrounds()
-  const [ratings, dispatch] = useReducer(ratingReducer, new Map())
-  const [sort, setSort] = useState<SortOption>("default")
+  const router = useRouter();
+  const { user, logout, isAdmin } = useAuth();
+  const { campgrounds, getCampgrounds, loading, error } = useCampgrounds();
+  const [ratings, dispatch] = useReducer(ratingReducer, new Map());
+  const [sort, setSort] = useState<SortOption>("default");
 
-  useEffect(() => { getCampgrounds() }, [])
+  useEffect(() => {
+    getCampgrounds();
+  }, []);
 
-  const sorted = sortCampgrounds(campgrounds, ratings, sort)
+  const sorted = sortCampgrounds(campgrounds, ratings, sort);
 
-  const handleView = (id: string) => router.push(`/campgrounds/${id}`)
-  const handleBook = (id: string) => router.push(`/campgrounds/${id}`)
+  const handleView = (id: string) => router.push(`/campgrounds/${id}`);
+  const handleBook = (id: string) => router.push(`/campgrounds/${id}`);
 
   return (
     <>
@@ -117,7 +138,9 @@ export default function CampgroundsPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">Sort by:</label>
+            <label className="text-sm font-medium text-gray-600">
+              Sort by:
+            </label>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortOption)}
@@ -140,15 +163,16 @@ export default function CampgroundsPage() {
             </p>
             <div className="mt-1 flex flex-wrap gap-2">
               {Array.from(ratings.entries()).map(([id, rating]) => {
-                const camp = campgrounds.find((c) => c._id === id)
+                const camp = campgrounds.find((c) => c._id === id);
                 return camp ? (
                   <span
                     key={id}
                     className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800"
                   >
-                    {camp.name}: {"★".repeat(rating)}{"☆".repeat(5 - rating)}
+                    {camp.name}: {"★".repeat(rating)}
+                    {"☆".repeat(5 - rating)}
                   </span>
-                ) : null
+                ) : null;
               })}
             </div>
           </div>
@@ -160,9 +184,18 @@ export default function CampgroundsPage() {
         ) : error ? (
           <ErrorState message={error} onRetry={getCampgrounds} />
         ) : sorted.length === 0 ? (
-          <EmptyState title="No Campgrounds" message="There are no campgrounds available right now." />
+          <EmptyState
+            title="No Campgrounds"
+            message="There are no campgrounds available right now."
+          />
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.5rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: "1.5rem",
+            }}
+          >
             {sorted.map((camp) => (
               <div key={camp._id} className="flex flex-col">
                 <CampgroundCard
@@ -188,5 +221,5 @@ export default function CampgroundsPage() {
         )}
       </PageContainer>
     </>
-  )
+  );
 }

@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Card from "@/components/ui/Card"
-import Button from "@/components/ui/Button"
-import { Campground } from "@/libs/types"
-import LoadingState from "@/components/common/LoadingState"
-import EmptyState from "@/components/common/EmptyState"
+import Image from "next/image";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { Campground } from "@/types";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
 
 interface CampgroundDetailCardProps {
-  campground: Campground | null
-  loading?: boolean
-  onBook?: (id: string) => void
-  onBack?: () => void
+  campground: Campground | null;
+  loading?: boolean;
+  onBook?: (id: string) => void;
+  onBack?: () => void;
 }
 
 export default function CampgroundDetailCard({
@@ -21,7 +21,7 @@ export default function CampgroundDetailCard({
   onBack,
 }: CampgroundDetailCardProps) {
   if (loading) {
-    return <LoadingState message="Loading campground details..." />
+    return <LoadingState message="Loading campground details..." />;
   }
 
   if (!campground) {
@@ -30,7 +30,7 @@ export default function CampgroundDetailCard({
         title="Campground Not Found"
         message="The campground you are looking for does not exist."
       />
-    )
+    );
   }
 
   const {
@@ -43,7 +43,7 @@ export default function CampgroundDetailCard({
     tel,
     region,
     picture,
-  } = campground
+  } = campground;
 
   return (
     <Card className="overflow-hidden">
@@ -105,5 +105,5 @@ export default function CampgroundDetailCard({
         </div>
       </div>
     </Card>
-  )
+  );
 }

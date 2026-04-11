@@ -1,15 +1,18 @@
-"use client"
+"use client";
 
-import { Booking } from "@/libs/types"
-import BookingCard from "./BookingCard"
-import LoadingState from "@/components/common/LoadingState"
-import EmptyState from "@/components/common/EmptyState"
+import { Booking } from "@/types";
+import BookingCard from "./BookingCard";
+import LoadingState from "@/components/common/LoadingState";
+import EmptyState from "@/components/common/EmptyState";
 
 interface BookingListProps {
-  bookings: Booking[]
-  loading?: boolean
-  onEdit?: (booking: Booking) => void
-  onDelete?: (bookingId: string) => void
+  bookings: Booking[];
+  loading?: boolean;
+  onEdit?: (booking: Booking) => void;
+  onDelete?: (bookingId: string) => void;
+  onCancel?: (bookingId: string) => void;
+  onCheckIn?: (bookingId: string) => void;
+  onCheckOut?: (bookingId: string) => void;
 }
 
 export default function BookingList({
@@ -17,9 +20,12 @@ export default function BookingList({
   loading = false,
   onEdit,
   onDelete,
+  onCancel,
+  onCheckIn,
+  onCheckOut,
 }: BookingListProps) {
   if (loading) {
-    return <LoadingState message="Loading bookings..." />
+    return <LoadingState message="Loading bookings..." />;
   }
 
   if (!bookings || bookings.length === 0) {
@@ -28,7 +34,7 @@ export default function BookingList({
         title="No Bookings Yet"
         message="You have not made any bookings yet."
       />
-    )
+    );
   }
 
   return (
@@ -39,8 +45,11 @@ export default function BookingList({
           booking={booking}
           onEdit={onEdit}
           onDelete={onDelete}
+          onCancel={onCancel}
+          onCheckIn={onCheckIn}
+          onCheckOut={onCheckOut}
         />
       ))}
     </div>
-  )
+  );
 }

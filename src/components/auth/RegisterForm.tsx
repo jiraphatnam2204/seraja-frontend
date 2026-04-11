@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Input from "@/components/ui/Input"
-import Button from "@/components/ui/Button"
-import { RegisterData } from "@/libs/types"
+import { useState } from "react";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import { RegisterData } from "@/types";
 
 interface RegisterFormProps {
-  onSubmit: (data: RegisterData) => Promise<void> | void
-  loading?: boolean
-  error?: string
+  onSubmit: (data: RegisterData) => Promise<void> | void;
+  loading?: boolean;
+  error?: string;
 }
 
 export default function RegisterForm({
@@ -16,23 +16,23 @@ export default function RegisterForm({
   loading = false,
   error,
 }: RegisterFormProps) {
-  const [name, setName] = useState("")
-  const [tel, setTel] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [name, setName] = useState("");
+  const [tel, setTel] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!name || !tel || !email || !password) return
+    if (!name || !tel || !email || !password) return;
 
     await onSubmit({
       name,
       tel,
       email,
       password,
-    })
-  }
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -78,5 +78,5 @@ export default function RegisterForm({
         Register
       </Button>
     </form>
-  )
+  );
 }

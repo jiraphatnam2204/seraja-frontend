@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Input from "@/components/ui/Input"
-import Button from "@/components/ui/Button"
-import { LoginCredentials } from "@/libs/types"
+import { useState } from "react";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import { LoginCredentials } from "@/types";
 
 interface LoginFormProps {
-  onSubmit: (data: LoginCredentials) => Promise<void> | void
-  loading?: boolean
-  error?: string
+  onSubmit: (data: LoginCredentials) => Promise<void> | void;
+  loading?: boolean;
+  error?: string;
 }
 
 export default function LoginForm({
@@ -16,16 +16,16 @@ export default function LoginForm({
   loading = false,
   error,
 }: LoginFormProps) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!email || !password) return
+    if (!email || !password) return;
 
-    await onSubmit({ email, password })
-  }
+    await onSubmit({ email, password });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -47,13 +47,11 @@ export default function LoginForm({
         required
       />
 
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
       <Button type="submit" loading={loading} fullWidth>
         Login
       </Button>
     </form>
-  )
+  );
 }
