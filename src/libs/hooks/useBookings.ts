@@ -6,6 +6,7 @@ import { Booking } from "../../types";
 
 export const useBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [todayCheckouts, setTodayCheckouts] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
@@ -21,6 +22,24 @@ export const useBookings = () => {
     } catch (err) {
       console.error(err);
       setError("Failed to load bookings");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTodayCheckouts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiClient<{ data: Booking[] }>(
+        "/bookings/today-checkouts",
+        {},
+        token,
+      );
+      setTodayCheckouts(data.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load today's checkouts");
     } finally {
       setLoading(false);
     }
@@ -145,7 +164,9 @@ export const useBookings = () => {
 
   return {
     bookings,
+    todayCheckouts,
     getBookings,
+    getTodayCheckouts,
     createBooking,
     updateBooking,
     deleteBooking,
