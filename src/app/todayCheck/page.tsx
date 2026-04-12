@@ -58,6 +58,14 @@ export default function TodayCheckPage() {
     });
   }, [bookings, todayStr]);
 
+  const checkedOutToday = useMemo(() => {
+    return bookings.filter((b) => {
+      if (!b.checkOutDate) return false;
+      const bDate = new Date(b.checkOutDate).toISOString().split("T")[0];
+      return bDate === todayStr && b.status === "checked-out";
+    });
+  }, [bookings, todayStr]);
+  
   if (authLoading || (user && user.role !== "campOwner")) {
     return (
       <>
@@ -150,6 +158,62 @@ export default function TodayCheckPage() {
                           </div>
                         </div>
                         <div className="text-green-500 text-xl">✓</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* ── Checked-out Section ── */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <span className="flex h-3 w-3 rounded-full bg-orange-400"></span>
+                  Checked-out Today
+                  <span className="ml-2 text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {checkedOutToday.length}
+                  </span>
+                </h2>
+              </div>
+
+              {loading ? (
+                <div className="py-8">
+                  <LoadingState message="Fetching data..." />
+                </div>
+              ) : checkedOutToday.length === 0 ? (
+                <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 text-center text-gray-500">
+                  No guests have checked out yet today.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                  {checkedOutToday.map((booking) => (
+                    <div
+                      key={booking._id}
+                      className="group rounded-xl border border-gray-100 bg-gray-50/50 p-4 shadow-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-gray-500 text-lg">
+                            {booking.guestName || booking.user?.name || "Guest"}
+                          </p>
+                          <p className="text-xs text-gray-400 mb-2">
+                            {booking.guestTel || booking.user?.tel || "No phone"}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-700/10">
+                              Checked Out
+                            </div>
+                            <span className="text-[10px] text-gray-400">
+                              {booking.actualCheckOut
+                                ? new Date(booking.actualCheckOut).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-orange-400 text-xl">✓</div>
                       </div>
                     </div>
                   ))}
