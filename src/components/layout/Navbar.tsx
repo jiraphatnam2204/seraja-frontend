@@ -14,6 +14,7 @@ interface NavbarUser {
 
 interface NavbarProps {
   user?: NavbarUser | null;
+  isAdmin?: boolean;
   onLogout?: () => void;
 }
 
@@ -31,8 +32,14 @@ const NAV_LINKS = [
 ] as const;
 
 // ── Component ────────────────────────────────────────────────────────
-export default function Navbar({ user, onLogout }: NavbarProps) {
-  const reviewHref = user?.role ? REVIEW_ROUTES[user.role] : null;
+export default function Navbar({
+  user,
+  isAdmin = false,
+  onLogout,
+}: NavbarProps) {
+  const effectiveRole: UserRole | undefined =
+    user?.role ?? (isAdmin ? "admin" : undefined);
+  const reviewHref = effectiveRole ? REVIEW_ROUTES[effectiveRole] : null;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur transition-colors duration-300">
