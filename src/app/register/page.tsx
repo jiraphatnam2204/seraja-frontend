@@ -19,12 +19,14 @@ export default function RegisterPage() {
   // 👉 state สำหรับ popup
   const [showPolicy, setShowPolicy] = useState(false);
   const [pendingData, setPendingData] = useState<RegisterData | null>(null);
+  const [accepted, setAccepted] = useState(false);
 
   // 👉 กด submit → เปิด popup ก่อน
   const handleRegister = async (data: RegisterData) => {
-    setPendingData(data);
-    setShowPolicy(true);
-  };
+  setPendingData(data);
+  setAccepted(false); // reset ทุกครั้ง
+  setShowPolicy(true);
+};
 
   // 👉 กดยอมรับ policy → สมัครจริง
   const confirmRegister = async () => {
@@ -76,42 +78,60 @@ export default function RegisterPage() {
       </PageContainer>
 
       {/* ✅ Popup Policy */}
-      {showPolicy && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Terms & Privacy Policy
-            </h2>
+      {/* ✅ Popup Policy */}
+{showPolicy && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+      <h2 className="text-lg font-semibold text-gray-900">
+        Terms & Privacy Policy
+      </h2>
 
-            <div className="mt-3 max-h-40 overflow-y-auto text-sm text-gray-600">
-              <p className="mb-2">
-                By creating an account, you agree to our Terms of Service and
-                Privacy Policy.
-              </p>
-              <p>
-                Your personal data will be handled securely and used only for
-                booking and account-related services.
-              </p>
-            </div>
+      <div className="mt-3 max-h-40 overflow-y-auto text-sm text-gray-600">
+        <p className="mb-2">
+          By creating an account, you agree to our Terms of Service and Privacy Policy.
+        </p>
+        <p>
+          Your personal data will be handled securely and used only for booking and account-related services.
+        </p>
+      </div>
 
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setShowPolicy(false)}
-                className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Cancel
-              </button>
+      {/* ✅ Checkbox */}
+      <div className="mt-4 flex items-center gap-2">
+        <input
+          id="acceptPolicy"
+          type="checkbox"
+          checked={accepted}
+          onChange={(e) => setAccepted(e.target.checked)}
+          className="h-4 w-4"
+        />
+        <label htmlFor="acceptPolicy" className="text-sm text-gray-700">
+          I agree to the Terms & Privacy Policy
+        </label>
+      </div>
 
-              <button
-                onClick={confirmRegister}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-              >
-                Accept & Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          onClick={() => setShowPolicy(false)}
+          className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={confirmRegister}
+          disabled={!accepted}
+          className={`rounded-md px-4 py-2 text-sm text-white ${
+            accepted
+              ? "bg-blue-600 hover:bg-blue-700"
+              : "bg-gray-300 cursor-not-allowed"
+          }`}
+        >
+          Accept
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }
