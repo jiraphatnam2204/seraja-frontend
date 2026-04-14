@@ -1,65 +1,118 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import Button from "@/components/ui/Button"
+import Link from "next/link";
+import Button from "@/components/ui/Button";
 
-interface NavbarProps {
-  user?: {
-    name?: string | null
-    email?: string | null
-    role?: "user" | "admin" | "campOwner"
-  } | null
-  isAdmin?: boolean
-  onLogout?: () => void
+// ── Types ────────────────────────────────────────────────────────────
+type UserRole = "user" | "admin" | "campOwner";
+
+interface NavbarUser {
+  name?: string | null;
+  email?: string | null;
+  role?: UserRole;
 }
 
-export default function Navbar({
-  user,
-  isAdmin = false,
-  onLogout,
-}: NavbarProps) {
+interface NavbarProps {
+  user?: NavbarUser | null;
+  onLogout?: () => void;
+}
+
+// ── Constants ────────────────────────────────────────────────────────
+const REVIEW_ROUTES: Record<UserRole, string> = {
+  admin: "/admin",
+  campOwner: "/owner/reviews",
+  user: "/user/reviews",
+};
+
+const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/campgrounds", label: "Campgrounds" },
+  { href: "/bookings", label: "Bookings" },
+] as const;
+
+// ── Component ────────────────────────────────────────────────────────
+export default function Navbar({ user, onLogout }: NavbarProps) {
+  const reviewHref = user?.role ? REVIEW_ROUTES[user.role] : null;
+
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur transition-colors duration-300">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        {/* Left: Brand + Navigation */}
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-xl font-bold text-gray-900 transition hover:text-blue-600">
+          <Link
+            href="/"
+            className="text-xl font-bold text-gray-900 transition hover:text-blue-600"
+          >
             Campground Booking
           </Link>
+
           <div className="hidden items-center gap-4 md:flex">
-            <Link href="/" className="text-sm font-medium text-gray-600 transition hover:text-blue-600">
-              Home
-            </Link>
-            <Link href="/campgrounds" className="text-sm font-medium text-gray-600 transition hover:text-blue-600">
-              Campgrounds
-            </Link>
-            <Link href="/bookings" className="text-sm font-medium text-gray-600 transition hover:text-blue-600">
-              Bookings
-            </Link>
+            {NAV_LINKS.map(({ href, label }) => (
+              <NavLink key={href} href={href}>
+                {label}
+              </NavLink>
+            ))}
+
             {user?.role === "campOwner" && (
-              <Link href="/todayCheck" className="text-sm font-medium text-blue-600 font-bold transition hover:text-blue-700">
+              <NavLink href="/todayCheck" highlight>
                 Monitor
-              </Link>
+              </NavLink>
             )}
+
+            {user && reviewHref && <NavLink href={reviewHref}>Reviews</NavLink>}
           </div>
         </div>
 
+        {/* Right: Auth Controls */}
         <div className="flex items-center gap-3">
           {user ? (
             <>
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-semibold text-gray-900">{user.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user.role || "User"}</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {user.name}
+                </p>
+                <p className="text-xs capitalize text-gray-500">
+                  {user.role ?? "user"}
+                </p>
               </div>
-              <Button variant="outline" onClick={onLogout}>Logout</Button>
+              <Button variant="outline" onClick={onLogout}>
+                Logout
+              </Button>
             </>
           ) : (
             <>
-              <Link href="/login"><Button variant="outline">Login</Button></Link>
-              <Link href="/register"><Button>Register</Button></Link>
+              <Link href="/login">
+                <Button variant="outline">Login</Button>
+              </Link>
+              <Link href="/register">
+                <Button>Register</Button>
+              </Link>
             </>
           )}
         </div>
       </div>
     </nav>
-  )
+  );
+}
+
+// ── Internal Sub-component ───────────────────────────────────────────
+interface NavLinkProps {
+  href: string;
+  highlight?: boolean;
+  children: React.ReactNode;
+}
+
+function NavLink({ href, highlight = false, children }: NavLinkProps) {
+  return (
+    <Link
+      href={href}
+      className={`text-sm font-medium transition ${
+        highlight
+          ? "font-bold text-blue-600 hover:text-blue-700"
+          : "text-gray-600 hover:text-blue-600"
+      }`}
+    >
+      {children}
+    </Link>
+  );
 }
