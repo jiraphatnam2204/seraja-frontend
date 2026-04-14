@@ -59,6 +59,9 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
+        <p className="mt-6 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} YourCompany. All rights reserved.
+        </p>
       </PageContainer>
     </>
   );
