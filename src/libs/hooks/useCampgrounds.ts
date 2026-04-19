@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { apiClient } from "../api/apiClient";
 import { Campground } from "../../types";
 
@@ -35,7 +35,7 @@ export const useCampgrounds = () => {
     return camp.picture;
   };
 
-  const getCampgrounds = async () => {
+  const getCampgrounds = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -51,14 +51,13 @@ export const useCampgrounds = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getCampgroundById = async (id: string) => {
+  const getCampgroundById = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     try {
       const data = await apiClient<{ data: Campground }>(`/campgrounds/${id}`);
-      // Apply image logic to the single item
       setSingleCampground({
         ...data.data,
         picture: resolveImage(data.data),
@@ -68,7 +67,7 @@ export const useCampgrounds = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     campgrounds,

@@ -33,24 +33,22 @@ export default function CampgroundDetailCard({
     );
   }
 
-  const {
-    _id,
-    name,
-    address,
-    district,
-    province,
-    postalcode,
-    tel,
-    region,
-    picture,
-  } = campground;
+  const { _id, name, address, district, province, postalcode, tel, region } =
+    campground;
+
+  const details = [
+    { label: "District", value: district },
+    { label: "Province", value: province },
+    { label: "Postal Code", value: postalcode },
+    { label: "Telephone", value: tel },
+  ];
 
   return (
     <Card className="overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2">
         <div className="relative min-h-[280px] w-full bg-gray-100 lg:min-h-[420px]">
           <Image
-            src={picture || "/img/campground-placeholder.jpg"}
+            src="/img/campImg.jpg"
             alt={name}
             fill
             className="object-cover"
@@ -70,25 +68,12 @@ export default function CampgroundDetailCard({
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <p className="font-semibold text-gray-900">District</p>
-                <p>{district}</p>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900">Province</p>
-                <p>{province}</p>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900">Postal Code</p>
-                <p>{postalcode}</p>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900">Telephone</p>
-                <p>{tel}</p>
-              </div>
+              {details.map((item) => (
+                <div key={item.label}>
+                  <p className="font-semibold text-gray-900">{item.label}</p>
+                  <p>{item.value}</p>
+                </div>
+              ))}
             </div>
           </div>
 

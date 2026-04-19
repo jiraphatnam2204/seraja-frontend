@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useSession } from "next-auth/react";
 import { apiClient } from "../api/apiClient";
 import { ApiError } from "../api/ApiError";
@@ -12,7 +12,7 @@ export const useBookings = () => {
   const { data: session } = useSession();
   const token = session?.user?.token;
 
-  const getBookings = async () => {
+  const getBookings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -25,7 +25,7 @@ export const useBookings = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   const getTodayCheckouts = async () => {
     setLoading(true);
@@ -162,6 +162,29 @@ export const useBookings = () => {
     }
   };
 
+  const exportBookingsCsv = async () => {
+    try {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        "https://cedt-be-for-fe-proj.vercel.app/api/v1";
+      const res = await fetch(`${apiUrl}/bookings/export`, {
+        headers: {
+          Authorization: `Bearer ${token ?? ""}`,
+        },
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bookings-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to export bookings. Please try again.");
+    }
+  };
+
   return {
     bookings,
     todayCheckouts,
@@ -173,6 +196,7 @@ export const useBookings = () => {
     cancelBooking,
     checkInBooking,
     checkOutBooking,
+    exportBookingsCsv,
     loading,
     error,
   };
