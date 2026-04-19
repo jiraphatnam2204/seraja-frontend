@@ -8,27 +8,15 @@ import { Campground } from "@/types";
 interface CampgroundCardProps {
   campground: Campground;
   onView?: (id: string) => void;
-  onBook?: (id: string) => void;
 }
 
 export default function CampgroundCard({
   campground,
   onView,
-  onBook,
 }: CampgroundCardProps) {
-  const {
-    _id,
-    name,
-    address,
-    district,
-    province,
-    postalcode,
-    tel,
-    region,
-    picture,
-  } = campground;
+  const { _id, name, address, district, province, postalcode, tel, region } =
+    campground;
 
-  // Refactor: Data mapping to avoid code smell (DRY principle)
   const details = [
     { label: "Address", value: address },
     { label: "District", value: district },
@@ -48,12 +36,11 @@ export default function CampgroundCard({
         }}
       >
         <Image
-          // src={picture || "/img/campground-placeholder.jpg"}
-          src={"/img/campImg.jpg"}
+          src="/img/campImg.jpg"
           alt={name}
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Critical for performance
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
 
@@ -76,17 +63,12 @@ export default function CampgroundCard({
           ))}
         </div>
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4">
           <Button
-            variant="outline"
-            className="flex-1"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors"
             onClick={() => onView?.(_id)}
           >
             View Details
-          </Button>
-
-          <Button className="flex-1" onClick={() => onBook?.(_id)}>
-            Book Now
           </Button>
         </div>
       </div>

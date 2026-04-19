@@ -1,82 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import PageContainer from "@/components/layout/PageContainer";
 import BookingList from "@/components/bookings/BookingList";
-import Modal from "@/components/ui/Modal";
-import BookingForm from "@/components/bookings/BookingForm";
-import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
+import BookingsHeader from "@/components/bookings/BookingsHeader";
+import RoleBanner from "@/components/bookings/RoleBanner";
+import TimeframeFilterTabs from "@/components/bookings/TimeframeFilterTabs";
+import StatusFilterBar from "@/components/bookings/StatusFilterBar";
+import UserStatsPanel from "@/components/bookings/UserStatsPanel";
+import BookingsPagination from "@/components/bookings/BookingsPagination";
+import EditBookingModal from "@/components/bookings/EditBookingModal";
+import GuestBookingModal from "@/components/bookings/GuestBookingModal";
 import ErrorState from "@/components/common/ErrorState";
 import LoadingState from "@/components/common/LoadingState";
+import { ITEMS_PER_PAGE, Role, ROLE_CONFIG } from "@/components/bookings/constants";
 import { useBookings } from "@/libs/hooks/useBookings";
 import { useAuth } from "@/libs/hooks/useAuth";
-import { Booking } from "@/types";
-
-const ROLE_CONFIG = {
-  user: {
-    title: "My Bookings",
-    description: "View and manage your personal campground bookings.",
-    badge: "User",
-    badgeColor: "bg-blue-100 text-blue-700",
-  },
-  admin: {
-    title: "All Bookings",
-    description:
-      "Administrator view — manage all bookings across all campgrounds.",
-    badge: "Admin",
-    badgeColor: "bg-red-100 text-red-700",
-  },
-  campOwner: {
-    title: "Campground Bookings",
-    description: "View and manage bookings for your campgrounds.",
-    badge: "Camp Owner",
-    badgeColor: "bg-green-100 text-green-700",
-  },
-};
+import { useBookingFilters } from "@/libs/hooks/useBookingFilters";
+import { useBookingActions } from "@/libs/hooks/useBookingActions";
+import { useEditBookingModal } from "@/libs/hooks/useEditBookingModal";
+import { useGuestBookingModal } from "@/libs/hooks/useGuestBookingModal";
 
 export default function BookingsPage() {
   const router = useRouter();
   const { user, logout, isAdmin, loading: authLoading } = useAuth();
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const {
     bookings,
     getBookings,
     createBooking,
     updateBooking,
-    deleteBooking,
     cancelBooking,
     checkInBooking,
     checkOutBooking,
+    exportBookingsCsv,
     loading,
     error,
   } = useBookings();
 
-  const [timeframeFilter, setTimeframeFilter] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
-
-  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
-  const [editSuccess, setEditSuccess] = useState(false);
-  const [editError, setEditError] = useState("");
-
-  // Guest booking modal (campOwner / admin)
-  const [guestModalOpen, setGuestModalOpen] = useState(false);
-  const [guestCampId, setGuestCampId] = useState("");
-  const [guestName, setGuestName] = useState("");
-  const [guestTel, setGuestTel] = useState("");
-  const [guestSuccess, setGuestSuccess] = useState(false);
-  const [guestError, setGuestError] = useState("");
-  const [guestLoading, setGuestLoading] = useState(false);
-
-  const role = (user?.role ?? "user") as keyof typeof ROLE_CONFIG;
-  const config = ROLE_CONFIG[role] ?? ROLE_CONFIG.user;
+  const filters = useBookingFilters(bookings);
+  const actions = useBookingActions({
+    cancelBooking,
+    checkInBooking,
+    checkOutBooking,
+    refresh: getBookings,
+  });
+  const editModal = useEditBookingModal({
+    updateBooking,
+    refresh: getBookings,
+  });
+  const guestModal = useGuestBookingModal({
+    createBooking,
+    refresh: getBookings,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
@@ -84,160 +62,11 @@ export default function BookingsPage() {
 
   useEffect(() => {
     if (user) getBookings();
-  }, [user]);
+  }, [user, getBookings]);
 
-  // ── CSV Export ────────────────────────────────────────────────────────
-  const handleExport = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "https://cedt-be-for-fe-proj.vercel.app/api/v1"}/bookings/export`,
-        {
-          headers: {
-            Authorization: `Bearer ${(user as any)?.token ?? ""}`,
-          },
-        },
-      );
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `bookings-${new Date().toISOString().split("T")[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      alert("Failed to export bookings. Please try again.");
-    }
-  };
+  const role = (user?.role ?? "user") as Role;
+  const config = ROLE_CONFIG[role] ?? ROLE_CONFIG.user;
 
-  // ── Edit ──────────────────────────────────────────────────────────────
-  const handleEdit = (booking: Booking) => {
-    setEditSuccess(false);
-    setEditError("");
-    setEditingBooking(booking);
-  };
-
-  const handleEditSubmit = async (
-    campId: string,
-    checkInDate: string,
-    checkOutDate: string,
-  ) => {
-    if (!editingBooking) return;
-    setEditError("");
-    try {
-      await updateBooking(editingBooking._id, checkInDate, checkOutDate);
-      setEditSuccess(true);
-      await getBookings();
-    } catch (err: any) {
-      setEditError(err.message || "Failed to update booking.");
-      throw err;
-    }
-  };
-
-  // ── Cancel ────────────────────────────────────────────────────────────
-  const handleCancel = async (bookingId: string) => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return;
-    try {
-      await cancelBooking(bookingId);
-      await getBookings();
-    } catch (err: any) {
-      alert(err.message || "Failed to cancel booking.");
-    }
-  };
-
-  // ── Check In / Check Out (campOwner) ──────────────────────────────────
-  const handleCheckIn = async (bookingId: string) => {
-    if (!confirm("Confirm check-in for this guest?")) return;
-    try {
-      await checkInBooking(bookingId);
-      await getBookings();
-    } catch (err: any) {
-      alert(err.message || "Failed to check in.");
-    }
-  };
-
-  const handleCheckOut = async (bookingId: string) => {
-    if (!confirm("Confirm check-out for this guest?")) return;
-    try {
-      await checkOutBooking(bookingId);
-      await getBookings();
-    } catch (err: any) {
-      alert(err.message || "Failed to check out.");
-    }
-  };
-
-  // ── Guest booking (campOwner / admin) ─────────────────────────────────
-  const openGuestModal = () => {
-    setGuestModalOpen(true);
-    setGuestSuccess(false);
-    setGuestError("");
-    setGuestCampId("");
-    setGuestName("");
-    setGuestTel("");
-  };
-
-  const handleGuestSubmit = async (
-    campId: string,
-    checkInDate: string,
-    checkOutDate: string,
-  ) => {
-    if (!guestName.trim() || !guestTel.trim()) {
-      setGuestError("Guest name and telephone are required.");
-      return;
-    }
-    if (!campId.trim()) {
-      setGuestError("Campground ID is required.");
-      return;
-    }
-    setGuestLoading(true);
-    setGuestError("");
-    try {
-      await createBooking(
-        campId,
-        checkInDate,
-        checkOutDate,
-        guestName,
-        guestTel,
-      );
-      setGuestSuccess(true);
-      await getBookings();
-    } catch (err: any) {
-      setGuestError(err.message || "Failed to create guest booking.");
-    } finally {
-      setGuestLoading(false);
-    }
-  };
-
-  const STATUS_FILTERS = [
-    { key: "confirmed", label: "Confirmed", color: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" },
-    { key: "checked-in", label: "Checked In", color: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" },
-    { key: "checked-out", label: "Checked Out", color: "bg-gray-200 text-gray-600 border-gray-200 hover:bg-gray-200" },
-    { key: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-600 border-red-200 hover:bg-red-200" },
-  ] as const;
-
-    
-  const timeframeFilteredBookings = bookings.filter((b) => {
-  if (!timeframeFilter) return true;
-  if (timeframeFilter === "today") {
-    return new Date(b.checkInDate).setHours(0, 0, 0, 0) === today.getTime() ||
-           new Date(b.checkOutDate).setHours(0, 0, 0, 0) === today.getTime();
-  }
-  if (timeframeFilter === "thisWeek") {
-    const checkIn = new Date(b.checkInDate).setHours(0, 0, 0, 0);
-    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0);
-    return checkIn > today.getTime() && checkIn <= weekFromNow;
-  }
-  if (timeframeFilter === "later") {
-    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0);
-    return new Date(b.checkInDate).setHours(0, 0, 0, 0) > weekFromNow;
-  }
-  return true;
-});
-
-const filteredBookings = statusFilter
-  ? timeframeFilteredBookings.filter((b) => b.status === statusFilter)
-  : timeframeFilteredBookings;
-  
   if (authLoading) {
     return (
       <>
@@ -249,359 +78,92 @@ const filteredBookings = statusFilter
     );
   }
 
+  const hasBookings = !loading && bookings.length > 0;
+  const isOwnerOrAdmin = role === "campOwner" || role === "admin";
+
   return (
     <>
       <Navbar user={user} isAdmin={isAdmin} onLogout={logout} />
 
       <PageContainer>
-        {/* ── Header ── */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-1 flex-wrap">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {config.title}
-              </h1>
-              <span
-                className={`text-xs font-semibold px-2.5 py-1 rounded-full ${config.badgeColor}`}
-              >
-                {config.badge}
-              </span>
-            </div>
-            <p className="text-sm text-gray-500">{config.description}</p>
-          </div>
+        <BookingsHeader
+          config={config}
+          role={role}
+          onOpenGuestModal={guestModal.open}
+          onExport={exportBookingsCsv}
+        />
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Guest booking button (campOwner + admin) */}
-            {(role === "campOwner" || role === "admin") && (
-              <Button variant="outline" onClick={openGuestModal}>
-                + Guest Booking
-              </Button>
-            )}
-            {/* CSV Export (campOwner + admin) */}
-            {(role === "campOwner" || role === "admin") && (
-              <Button variant="secondary" onClick={handleExport}>
-                ↓ Export CSV
-              </Button>
-            )}
-          </div>
-        </div>
+        <RoleBanner role={role} />
 
-        {/* ── Role banners ── */}
-        {role === "admin" && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            ⚠️ You are viewing <strong>all bookings</strong> across the platform
-            as an administrator.
-          </div>
-        )}
-        {role === "campOwner" && (
-          <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            🏕️ Showing bookings for your campgrounds. Use{" "}
-            <strong>Guest Booking</strong> to add walk-in customers. Use{" "}
-            <strong>Export CSV</strong> to sync with your own records.
-          </div>
+        {isOwnerOrAdmin && hasBookings && (
+          <TimeframeFilterTabs
+            bookings={bookings}
+            active={filters.timeframeFilter}
+            onChange={(next) => {
+              filters.setTimeframeFilter(next);
+              filters.setStatusFilter(null);
+            }}
+          />
         )}
 
-        {/* ── Timeframe Tabs (campOwner/admin only) ── */}
-        {(role === "campOwner" || role === "admin") && !loading && bookings.length > 0 && (
-          <div className="mb-6 flex gap-2 flex-wrap">
-            {[
-              { key: null, label: "All", color: "bg-gray-800 text-white border-gray-800" },
-              { key: "today", label: "Today", color: "bg-green-600 text-white border-green-600" },
-              { key: "thisWeek", label: "This Week", color: "bg-blue-600 text-white border-blue-600" },
-              { key: "later", label: "Later", color: "bg-gray-500 text-white border-gray-500" },
-            ].map((tf) => {
-              const isActive = timeframeFilter === tf.key;
-              const count = (() => {
-                if (tf.key === null) return bookings.length;
-                if (tf.key === "today") {
-                  return bookings.filter(
-                    (b) =>
-                      new Date(b.checkInDate).setHours(0, 0, 0, 0) === today.getTime() ||
-                      new Date(b.checkOutDate).setHours(0, 0, 0, 0) === today.getTime()
-                  ).length;
-                }
-                if (tf.key === "thisWeek") {
-                  const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0);
-                  return bookings.filter(
-                    (b) => {
-                      const checkIn = new Date(b.checkInDate).setHours(0, 0, 0, 0);
-                      return checkIn > today.getTime() && checkIn <= weekFromNow;
-                    }
-                  ).length;
-                }
-                const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0);
-                return bookings.filter(
-                  (b) => new Date(b.checkInDate).setHours(0, 0, 0, 0) > weekFromNow
-                ).length;
-              })();
+        {role === "user" && hasBookings && <UserStatsPanel bookings={bookings} />}
 
-              return (
-                <button
-                  key={tf.key ?? "all"}
-                  onClick={() => {
-                    setTimeframeFilter(isActive ? null : tf.key);
-                    setStatusFilter(null);
-                  }}
-                  className={`
-                    text-sm font-semibold px-4 py-2 rounded-full border transition-colors
-                    ${isActive
-                      ? tf.color
-                      : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"}
-                  `}
-                >
-                  {tf.label}
-                  <span className="ml-2 text-xs opacity-80">{count}</span>
-                </button>
-              );
-            })}
-          </div>
+        {hasBookings && (
+          <StatusFilterBar
+            timeframeFilteredBookings={filters.timeframeFilteredBookings}
+            active={filters.statusFilter}
+            onChange={filters.setStatusFilter}
+          />
         )}
 
-        {/* ── Stats (regular users only) ── */}
-        {role === "user" && !loading && bookings.length > 0 && (
-          <div className="mb-6 flex gap-4 flex-wrap">
-            <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
-              <p className="text-xs text-gray-500">Total</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {bookings.length}
-              </p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
-              <p className="text-xs text-gray-500">Upcoming</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {
-                  bookings.filter(
-                    (b) =>
-                      new Date(b.checkInDate).setHours(0, 0, 0, 0) >= today.getTime()
-                  ).length
-                }
-              </p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
-              <p className="text-xs text-gray-500">Past</p>
-              <p className="text-2xl font-bold text-gray-400">
-                {
-                  bookings.filter(
-                    (b) =>
-                      new Date(b.checkInDate).setHours(0, 0, 0, 0) < today.getTime()
-                  ).length
-                }
-              </p>
-            </div>
-          </div>
-        )}
-        {/* ── Status Filter Bar (all roles) ── */}
-        {!loading && bookings.length > 0 && (
-          <div className="mb-6 flex items-center gap-2 flex-wrap">
-            {/* All */}
-            <button
-              onClick={() => setStatusFilter(null)}
-              className={`
-                text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors
-                ${statusFilter === null
-                  ? "bg-gray-800 text-white border-gray-800"
-                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"}
-              `}
-            >
-              All
-              <span className="ml-1.5 opacity-70">
-                {timeframeFilteredBookings.length}
-              </span>
-            </button>
-
-            {/* Confirmed, Checked-in, Checked-out & Cancelled */}
-            {STATUS_FILTERS.map(({ key, label, color }) => {
-              const count = timeframeFilteredBookings.filter((b) => b.status === key).length;
-              const isActive = statusFilter === key;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setStatusFilter(isActive ? null : key)}
-                  className={`
-                    text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors
-                    ${isActive
-                      ? color.replace("hover:", "") + " ring-2 ring-offset-1 ring-current"
-                      : `bg-white text-gray-500 border-gray-200 hover:${color.split(" ")[0].replace("bg-", "bg-")}`}
-                  `}
-                >
-                  {label}
-                  <span className="ml-1.5 opacity-70">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {/* ── Booking list ── */}
         {error ? (
           <ErrorState message={error} onRetry={getBookings} />
         ) : (
           <>
             <BookingList
-              bookings={filteredBookings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)}
-              loading={loading}
-              onEdit={role !== "campOwner" ? handleEdit : undefined}
-              onCancel={handleCancel}
-              onCheckIn={role === "campOwner" ? handleCheckIn : undefined}
-              onCheckOut={role === "campOwner" ? handleCheckOut : undefined}
-              highlightToday={role === "campOwner" || role === "admin"}
+              bookings={filters.pagedBookings}
+              loading={loading && bookings.length === 0}
+              onEdit={role !== "campOwner" ? editModal.open : undefined}
+              onCancel={actions.handleCancel}
+              onCheckIn={role === "campOwner" ? actions.handleCheckIn : undefined}
+              onCheckOut={role === "campOwner" ? actions.handleCheckOut : undefined}
+              highlightToday={isOwnerOrAdmin}
             />
 
-            {/* Pagination UI */}
-            {!loading && filteredBookings.length > ITEMS_PER_PAGE && (
-              <div className="flex items-center justify-center gap-2 mt-8 mb-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.ceil(filteredBookings.length / ITEMS_PER_PAGE) }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
-                        currentPage === i + 1
-                          ? "bg-blue-600 text-white"
-                          : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === Math.ceil(filteredBookings.length / ITEMS_PER_PAGE)}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
+            <BookingsPagination
+              total={filters.filteredBookings.length}
+              pageSize={ITEMS_PER_PAGE}
+              currentPage={filters.currentPage}
+              onChange={filters.setCurrentPage}
+            />
           </>
         )}
       </PageContainer>
 
-      {/* ── Edit Modal ── */}
-      <Modal
-        open={!!editingBooking}
-        title={`Edit Booking — ${editingBooking?.campground?.name ?? ""}`}
-        onClose={() => {
-          setEditingBooking(null);
-          setEditError("");
-        }}
-      >
-        {editSuccess ? (
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <div className="text-4xl">✅</div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Booking Updated!
-            </h3>
-            <p className="text-sm text-gray-500">
-              Your booking dates have been updated.
-            </p>
-            <Button onClick={() => setEditingBooking(null)} className="mt-2">
-              Done
-            </Button>
-          </div>
-        ) : (
-          <BookingForm
-            campId={editingBooking?.campground?._id ?? ""}
-            onSubmit={handleEditSubmit}
-            loading={loading}
-            error={editError || undefined}
-          />
-        )}
-      </Modal>
+      <EditBookingModal
+        editingBooking={editModal.editingBooking}
+        editSuccess={editModal.editSuccess}
+        editError={editModal.editError}
+        loading={loading}
+        close={editModal.close}
+        submit={editModal.submit}
+      />
 
-      {/* ── Guest Booking Modal (campOwner / admin) ── */}
-      <Modal
-        open={guestModalOpen}
-        title="New Guest Booking"
-        onClose={() => setGuestModalOpen(false)}
-      >
-        {guestSuccess ? (
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <div className="text-4xl">🎉</div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Guest Booking Created!
-            </h3>
-            <p className="text-sm text-gray-500">
-              The booking has been recorded successfully.
-            </p>
-            <div className="flex gap-3 mt-2">
-              <Button
-                onClick={() => {
-                  setGuestModalOpen(false);
-                }}
-              >
-                Done
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setGuestSuccess(false);
-                  setGuestName("");
-                  setGuestTel("");
-                  setGuestCampId("");
-                }}
-              >
-                Add Another
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {/* Guest info */}
-            <div className="rounded-lg border border-purple-100 bg-purple-50 px-4 py-3">
-              <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-2">
-                Guest Info
-              </p>
-              <div className="flex flex-col gap-3">
-                <Input
-                  label="Guest Name"
-                  type="text"
-                  placeholder="e.g. John Doe"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Guest Telephone"
-                  type="tel"
-                  placeholder="e.g. 0812345678"
-                  value={guestTel}
-                  onChange={(e) => setGuestTel(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Campground ID */}
-            <Input
-              label="Campground ID"
-              type="text"
-              placeholder="Paste campground _id here"
-              value={guestCampId}
-              onChange={(e) => setGuestCampId(e.target.value)}
-              required
-            />
-
-            {/* Dates via BookingForm */}
-            <BookingForm
-              campId={guestCampId}
-              onSubmit={handleGuestSubmit}
-              loading={guestLoading}
-              error={guestError || undefined}
-            />
-          </div>
-        )}
-      </Modal>
+      <GuestBookingModal
+        isOpen={guestModal.isOpen}
+        close={guestModal.close}
+        reset={guestModal.reset}
+        campId={guestModal.campId}
+        setCampId={guestModal.setCampId}
+        name={guestModal.name}
+        setName={guestModal.setName}
+        tel={guestModal.tel}
+        setTel={guestModal.setTel}
+        loading={guestModal.loading}
+        error={guestModal.error}
+        success={guestModal.success}
+        submit={guestModal.submit}
+      />
     </>
   );
 }
