@@ -18,13 +18,6 @@ interface NavbarProps {
   onLogout?: () => void;
 }
 
-// ── Constants ────────────────────────────────────────────────────────
-const REVIEW_ROUTES: Record<UserRole, string> = {
-  admin: "/admin",
-  campOwner: "/owner/reviews",
-  user: "/user/reviews",
-};
-
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/campgrounds", label: "Campgrounds" },
@@ -37,9 +30,6 @@ export default function Navbar({
   isAdmin = false,
   onLogout,
 }: NavbarProps) {
-  const effectiveRole: UserRole | undefined =
-    user?.role ?? (isAdmin ? "admin" : undefined);
-  const reviewHref = effectiveRole ? REVIEW_ROUTES[effectiveRole] : null;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur transition-colors duration-300">
@@ -65,8 +55,6 @@ export default function Navbar({
                 Monitor
               </NavLink>
             )}
-
-            {user && reviewHref && <NavLink href={reviewHref}>Reviews</NavLink>}
           </div>
         </div>
 
